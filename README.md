@@ -1,159 +1,158 @@
-# libthread — Bibliothèque de Threads Utilisateur en C
+# Thread Library Project - Operating Systems Course
+
+## Copyright Notice
+© 2025 Maulard Jules - François Mathieu - Larragueta César - Derache Cédric. All rights reserved.
+
+This project was developed as part of an Operating Systems course by a team of students who contributed equally to all aspects of the development. The project was originally developed on a private institutional Git repository (Thor forge) and has been migrated to this public repository, which explains the single commit history. No part of this project may be reproduced, distributed, or transmitted in any form or by any means without the prior written permission of the authors.
 
 ## Description
+This project implements a user-space thread library with cooperative scheduling (no preemption) using a FIFO policy. The library provides an interface similar to `pthread.h` for creating, managing, and synchronizing threads entirely in user space.
 
-`libthread` est une bibliothèque de threads en espace utilisateur écrite en C. Elle repose sur les primitives bas niveau (`ucontext.h`) et fournit un système de threading léger, coopératif et préemptif, sans utiliser `pthread`.
+## Key Features
+- **Cooperative Thread Scheduling**: FIFO-based non-preemptive scheduling
+- **Thread Management**: Create, destroy, yield, join operations
+- **Main Thread Integration**: The main function is treated as a thread
+- **Performance Benchmarking**: Comparison tools with pthread implementation
+- **Advanced Features Implemented**:
+  - **Preemption**: Timer-based preemptive scheduling using alarms
+  - **Priority Scheduling**: Thread priority management with starvation prevention
+  - **Mutex Support**: Mutual exclusion primitives for thread synchronization
 
-Une extension (`libthread_ext`) ajoute la gestion des priorités, l’ordonnancement à files multiples, et le vieillissement (`aging`).
-
----
-
-## Structure du projet
-
+## Project Structure
 ```
-.
-├── src/                 # Code source de la bibliothèque
-│   ├── thread.c         # Bibliothèque de base
-│   └── thread_ext.c     # Extension avec gestion des priorités
-├── test/                # Tests unitaires et de performance pour libthread
-├── benchmark/           # Scripts de benchmark
-├── build/               # Dossier de compilation
-├── install/             # Installation de la lib et des binaires
-├── Makefile             # Compilation & automatisation
-└── README.md           
+├── src/                    # Source code for thread library
+├── tests/                  # Test programs and benchmarks
+├── install/               # Installation directory
+│   ├── lib/              # Compiled library files
+│   └── bin/              # Executable test programs
+├── graphs/               # Performance comparison graphs
+└── Makefile              # Build system
 ```
 
----
+## Implementation Details
 
-## Compilation
+### Core Thread Operations
+- `thread_create()`: Create new threads with specified functions
+- `thread_yield()`: Voluntarily yield CPU to other threads
+- `thread_join()`: Wait for thread termination
+- `thread_self()`: Get current thread identifier
+- `thread_exit()`: Terminate current thread
 
-### Compiler la bibliothèque de base + les tests :
+### Advanced Features
+- **Preemption**: Implemented using SIGALRM for time-sliced scheduling
+- **Priority Scheduling**: Threads can be assigned different priorities
+- **Mutex Operations**: `thread_mutex_lock()`, `thread_mutex_unlock()` for synchronization
 
+## Prerequisites
+- GCC compiler
+- Make
+- Valgrind (for memory leak detection)
+- gnuplot or Python/Matplotlib (for performance graphs)
+
+## Installation and Usage
+
+### Building the Project
 ```bash
+# Default build - compile library and tests
 make
-```
 
-### Compiler la version étendue avec gestion des priorités :
+# Build pthread versions for comparison
+make pthreads
 
-```bash
-make thread_ext
-```
-
-> Le système crée automatiquement les répertoires `build/`, `build/test/`, etc.
-
----
-
-## Exécution des tests
-
-### 1. Lancer tous les tests de la bibliothèque `libthread` :
-
-```bash
-make check
-```
-
-### 2. Lancer les tests avec `valgrind` (vérification mémoire) :
-
-```bash
-make valgrind
-```
-
-### 3. Lancer les tests pour `libthread_ext` :
-
-```bash
-make check_ext
-```
-
-### 4. Lancer les tests `libthread_ext` avec `valgrind` :
-
-```bash
-make valgrind_ext
-```
-
----
-
-## Options de compilation
-
-Active ou désactive certaines fonctionnalités lors du `make` :
-
-| Variable             | Valeur | Description                          |
-|----------------------|--------|--------------------------------------|
-| ENABLE_PREEMPTION    | 0 / 1  | Active la préemption (`par défaut : 1`) |
-| ENABLE_LOGGING       | 0 / 1  | Affiche les logs internes            |
-| ENABLE_NDEBUG        | 0 / 1  | Supprime les assertions (`NDEBUG`)   |
-
-
----
-
-## Installation
-
-Pour copier la bibliothèque et les exécutables dans `install/` :
-
-```bash
+# Install compiled files
 make install
 ```
 
-- `install/lib/libthread.a`
-- `install/bin/` contient les exécutables de test
-
----
-
-## Benchmarks
-
-### Lancer tous les benchmarks :
-
+### Running Tests
 ```bash
+# Run all tests with reasonable parameters
+make check
+
+# Run tests under Valgrind
+make valgrind
+
+# Generate performance comparison graphs
 make graphs
 ```
 
-### Lancer un benchmark pour un test spécifique (exemple : test 23) :
+### Available Test Programs
+The project includes comprehensive test programs:
+- `01-main`: Basic thread creation and execution
+- `02-switch`: Thread switching mechanisms
+- `11-join`: Thread joining operations
+- `21-create-many`: Mass thread creation tests
+- `22-create-many-recursive`: Recursive thread creation
+- `31-switch-many`: Context switching performance
+- `32-switch-many-join`: Combined switching and joining
+- `51-fibonacci`: Fibonacci calculation with threads
+- `61-mutex`: Mutex synchronization tests
+- `62-mutex-stress`: Stress testing for mutex operations
+- `71-preemption`: Preemption functionality tests
 
-```bash
-make graphs_23
-```
+### Performance Testing
+The library includes custom performance tests:
+- **Array Sum**: Parallel computation using divide-and-conquer
+- **Parallel Sorting**: Multi-threaded sorting algorithms
+- **Stress Tests**: High-load scenarios with many concurrent threads
 
----
+## Architecture
 
-## Liste des tests
+### Scheduling Algorithm
+- **Base Implementation**: Cooperative FIFO scheduling
+- **Enhanced Version**: Preemptive scheduling with configurable time slices
+- **Priority Support**: Multiple priority levels with round-robin within each level
 
-**Tests simples (sans paramètres) :**
+### Memory Management
+- Dynamic stack allocation for each thread
+- Proper cleanup and leak prevention
+- Valgrind integration for memory debugging
 
-- `01-main` : Création d’un thread
-- `02-switch` : Changement de contexte
-- `03-equity` : Répartition équitable
-- `11-join`, `12-join-main`, `13-join-switch` : Synchronisation avec `join`
-- `63-mutex-equity`, `64-mutex-join` : Synchronisation avec `mutex`
+### Synchronization
+- Mutex implementation using atomic operations
+- Deadlock detection and prevention mechanisms
+- Integration with preemptive scheduling
 
-**Tests avec un paramètre (exécutés avec `$(PARAM1)` = 10) :**
+## Performance Comparison
+The library includes comprehensive benchmarking against pthread:
+- Thread creation overhead
+- Context switching performance
+- Scalability with increasing thread counts
+- Memory usage patterns
 
-- `21-create-many`, `22-create-many-recursive`, `23-create-many-once`
-- `51-fibonacci` : Calcul récursif
-- `71-preemption` : Test de préemption
-- `61-mutex`, `62-mutex` : Mutex de base
+Performance measurements are conducted on multi-core systems with proper CPU binding to ensure fair comparison.
 
-**Tests avec deux paramètres (exécutés avec `$(PARAM1)=10`, `$(PARAM2)=10`) :**
+## Build System
+The Makefile provides the following targets:
+- `make`: Default build
+- `make check`: Run test suite
+- `make valgrind`: Memory leak detection
+- `make pthreads`: Build pthread versions
+- `make graphs`: Generate performance graphs
+- `make install`: Install to `install/` directory
 
-- `31-switch-many`, `32-switch-many-join`, `33-switch-many-cascade`
+## Testing and Validation
+- **Correctness**: All test programs execute correctly
+- **Memory Safety**: No memory leaks detected by Valgrind
+- **Performance**: Benchmarking against pthread implementation
+- **Robustness**: Stress testing with high thread counts
 
-**Tests de `libthread_ext` (priorité) :**
+## Implementation Notes
+- The library maintains O(1) complexity for core operations where possible
+- Thread-safe operations using appropriate synchronization primitives
+- Efficient data structures to minimize overhead
+- Proper handling of edge cases and error conditions
 
-- `priority-test`, `priority_test_basic`, `priority_test_starvation`, `priority_test_stress`
-- `priority_test_efficacity` (avec paramètre)
+## Academic Context
+This project was developed as part of an Operating Systems course focusing on:
+- Thread scheduling algorithms
+- User-space thread implementation
+- Performance analysis and optimization
+- Memory management in multi-threaded environments
+- Synchronization primitives and their implementation
 
----
-
-## Nettoyage
-
-Pour supprimer tous les fichiers compilés :
-
-```bash
-make clean
-```
-
----
-
-## Auteurs
-
-Jules Maulard, Cédric Dérache, César Larragueta, Mathieu Francois
-
----
-
+## Technical Specifications
+- **Language**: C (following pthread.h interface conventions)
+- **Scheduling**: Cooperative FIFO with preemptive extensions
+- **Synchronization**: Mutex support with advanced features
+- **Platform**: POSIX-compliant systems
+- **Performance**: Optimized for multi-core architectures
